@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHA-App-Web-CMS</title>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDprKJkxJfvujigZ-zjSOK3ME6kkiKxW_A",
+            authDomain: "mha-mobile-app.firebaseapp.com",
+            projectId: "mha-mobile-app",
+            storageBucket: "mha-mobile-app.firebasestorage.app",
+            messagingSenderId: "31333879935",
+            appId: "1:31333879935:web:5f8149850cada694f2ef4a",
+            measurementId: "G-95VGR5SVRV"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Function to load data from Firebase
+        function loadData() {
+            const dataRef = ref(db, 'services');  // Reference to the Firebase 'services' node
+            get(dataRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    displayData(data);
+                } else {
+                    document.getElementById('dataDisplay').innerHTML = '<p>No data available</p>';
+                    console.log("No data available");
+                }
+            }).catch((error) => {
+                console.error("Error loading data:", error);
+            });
+        }
+
+        // Function to display data on the page
+        function displayData(data) {
+            const dataDisplay = document.getElementById('dataDisplay');
+            dataDisplay.innerHTML = '';
+
+            const headers = ['Service Category', 'Service Geography', 'Service Sub Category', 'Service Island', 'Service Name', 'Service Phone', 'Service Website'];
+            let headerRow = `<div class="dataRow headerRow"><div class="dataCell headerCell">${headers.join('</div><div class="dataCell headerCell">')}</div></div>`;
+            dataDisplay.innerHTML += headerRow;
+
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    const item = data[key];
+                    dataDisplay.innerHTML += `
+                        <div class="dataRow">
+                            <div class="dataCell">${item.serviceCategory || 'N/A'}</div>
+                            <div class="dataCell">${item.serviceGeography || 'N/A'}</div>
+                            <div class="dataCell">${item.serviceSubCategory || 'N/A'}</div>
+                            <div class="dataCell">${item.serviceIsland || 'N/A'}</div>
+                            <div class="dataCell">${item.serviceName || 'N/A'}</div>
+                            <div class="dataCell">${item.servicePhone || 'N/A'}</div>
+                            <div class="dataCell">${item.serviceWebsite || 'N/A'}</div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Function to create new data in Firebase
+        function createData(data) {
+            if (Object.values(data).every(value => value === "")) {
+                alert("Please fill in all fields before submitting.");
+                return;
+            }
+
+            const newDataRef = push(ref(db, 'services'));
+            set(newDataRef, data).then(() => {
+                console.log("Data added successfully");
+            }).catch((error) => {
+                console.error("Error adding data:", error);
+            });
+        }
+
+        function createDataSingle(data) {
+            if (Object.values(data).every(value => value === "")) {
+                alert("Please fill in all fields before submitting.");
+                return;
+            }
+
+            const newDataRef = push(ref(db, 'services'));
+            set(newDataRef, data).then(() => {
+                alert("Data added successfully");
+                document.getElementById('createDataForm').reset();
+            }).catch((error) => {
+                console.error("Error adding data:", error);
+            });
+        }
+        // Event listener for 'Create Data' button
+        document.getElementById('createDataForm').addEventListener('submit', function (event) {
+
+            event.preventDefault();
+            
+            const data = {
+                serviceCategory: document.getElementById('serviceCategory').value,
+                serviceGeography: document.getElementById('serviceGeography').value,
+                serviceSubCategory: document.getElementById('serviceSubCategory').value,
+                serviceIsland: document.getElementById('serviceIsland').value,
+                serviceName: document.getElementById('serviceName').value,
+                servicePhone: document.getElementById('servicePhone').value,
+                serviceWebsite: document.getElementById('serviceWebsite').value
+            };
+
+            createDataSingle(data);
+        });
+
+        // Event listener for 'Load Data' button
+        document.getElementById('loadDataButton').addEventListener('click', function() {
+            showLoadData();
+        });
+
+        // Event listener for 'Create Data' button
+        document.getElementById('createDataButton').addEventListener('click', function() {
+            showCreateDataForm();
+        });
+
+        // Event listener for 'Upload CSV Data' button
+        document.getElementById('uploadCSV').addEventListener('click', function() {
+            showCSV();
+        });
+
+         document.getElementById('uploadCSVButton').addEventListener('click', function() {
+            uploadCSVData();
+        });
+
+        // Function to show Load Data and hide Create Data form
+        function showLoadData() {
+            document.getElementById('createDataForm').style.display = 'none';
+            document.getElementById('dataDisplay').style.display = 'block';
+            document.getElementById('csvUploadSection').style.display = 'none';
+            loadData();
+            setActiveButton('loadDataButton');
+        }
+
+        // Function to show Create Data form and hide Load Data
+        function showCreateDataForm() {
+            document.getElementById('createDataForm').style.display = 'block';
+            document.getElementById('dataDisplay').style.display = 'none';
+            document.getElementById('csvUploadSection').style.display = 'none';
+            setActiveButton('createDataButton');
+        }
+
+         function showCSV() {
+            document.getElementById('createDataForm').style.display = 'none';
+            document.getElementById('dataDisplay').style.display = 'none';
+            document.getElementById('csvUploadSection').style.display = 'block';
+            setActiveButton('uploadCSV');
+        }
+        // Function to show Upload CSV button
+        function showUploadCSVButton() {
+            document.getElementById('uploadCSVButton').style.display = 'block';
+        }
+
+        // Function to highlight active button
+        function setActiveButton(buttonId) {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.style.backgroundColor = '';  // Reset all button backgrounds
+            });
+            document.getElementById(buttonId).style.backgroundColor = '#0056b3';  // Highlight active button
+        }
+
+        // Show Create Data form by default
+        showCreateDataForm();
+
+        // CSV Upload functionality
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                alert("Please upload a CSV file.");
+                return;
+            }
+
+            // const reader = new FileReader();
+            // reader.onload = function(e) {
+            //     const csvData = e.target.result;
+            //     parseCSV(csvData);
+            // };
+            // reader.readAsText(file);
+
+            // Show upload button after selecting file
+            document.getElementById('uploadCSVButton').style.display = 'block';
+        }
+
+        function parseCSV(csvData) {
+            const rows = csvData.split('\n');
+            const headers = ['Service Category', 'Service Geography', 'Service Sub Category', 'Service Island', 'Service Name', 'Service Phone', 'Service Website'];
+            let dataArr = [];
+
+            // Parse each row and map to Firebase format
+            rows.forEach((row, index) => {
+                if (index === 0) return; // Skip header row
+                const columns = row.split(',');
+
+                if (columns.length === headers.length) {
+                    const data = {
+                        serviceCategory: columns[0],
+                        serviceGeography: columns[1],
+                        serviceSubCategory: columns[2],
+                        serviceIsland: columns[3],
+                        serviceName: columns[4],
+                        servicePhone: columns[5],
+                        serviceWebsite: columns[6]
+                    };
+
+                    dataArr.push(data);
+                }
+            });
+
+
+            // Upload to Firebase
+            dataArr.forEach(data => {
+                createData(data);
+            });
+
+            // Show completion notification after uploading all data
+            alert("CSV data uploaded successfully!");
+        }
+
+        // Add the event listener for the CSV file upload
+        document.getElementById('csvFile').addEventListener('change', handleCSVUpload);
+
+        // Upload CSV Data function
+        function uploadCSVData() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files.length) {
+                alert("Please select a CSV file first.");
+            } else {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const csvData = e.target.result;
+                    parseCSV(csvData);
+                };
+                reader.readAsText(file);
+            }
+            document.getElementById('csvFile').value = '';
+            document.getElementById('uploadCSVButton').style.display = 'none';
+        }
+    </script>
+
+    <style>
+        /* General Page Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+        }
+
+        /* Styling the buttons */
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Styling for the form */
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        /* 2-Column Form Layout */
+        .form-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-container label {
+            font-size: 14px;
+            margin: 8px 0;
+            display: block;
+        }
+
+        .form-container input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 20px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        /* Excel-like Table Styling */
+        #dataDisplay {
+            display: table;
+            width: 80%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            max-height: 400px;
+            overflow-y: scroll;
+            margin: 0 auto; /* Center the data display */
+        }
+
+        .dataRow {
+            display: table-row;
+        }
+
+        .dataCell {
+            display: table-cell;
+            padding: 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .headerRow {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .headerCell {
+            font-weight: bold;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .dataRow:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Active button styling */
+        button.active {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>MHA-App-Web-CMS</h1>
+
+    <div style="text-align: center;">
+        <button id="loadDataButton">Load Data</button>
+        <button id="createDataButton">Create Data</button>
+        <button id="uploadCSV">Upload CSV Data</button>
+        <!-- <input type="file" id="csvFile" accept=".csv"> -->
+    </div>
+
+    <!-- Display Data Here -->
+    <div id="dataDisplay"></div>
+
+    <div id="csvUploadSection" style="text-align: center; margin-top: 20px;">
+        <h2>Select a CSV file to upload data:</h2>
+        <input type="file" id="csvFile" accept=".csv">
+        <button id="uploadCSVButton" style="display:none;">Upload CSV Data</button>
+    </div>
+
+    <!-- Form for Creating Data -->
+    <form id="createDataForm">
+        <div class="form-container">
+            <div>
+                <label for="serviceCategory">Service Category:</label>
+                <input type="text" id="serviceCategory"><br>
+
+                <label for="serviceGeography">Service Geography:</label>
+                <input type="text" id="serviceGeography"><br>
+
+                <label for="serviceSubCategory">Service Sub Category:</label>
+                <input type="text" id="serviceSubCategory"><br>
+
+                <label for="serviceName">Service Name:</label>
+                <input type="text" id="serviceName"><br>
+            </div>
+
+            <div>
+                <label for="serviceIsland">Service Island:</label>
+                <input type="text" id="serviceIsland"><br>
+
+                <label for="servicePhone">Service Phone:</label>
+                <input type="text" id="servicePhone"><br>
+
+                <label for="serviceWebsite">Service Website:</label>
+                <input type="text" id="serviceWebsite"><br>
+            </div>
+        </div>
+
+        <button type="submit">Submit</button>
+    </form>
+
+</body>
+</html>
